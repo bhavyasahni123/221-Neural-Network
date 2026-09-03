@@ -35,7 +35,7 @@ int main(){
 
     cout << fixed << setprecision(4);
 
-    for(int epoch = 0; epoch < 4; epoch++){
+    for(int epoch = 0; epoch < 11; epoch++){
 
         double SSE = 0;
 
