@@ -281,18 +281,6 @@ No specific final SSE, accuracy percentage, or convergence threshold is claimed 
 - Training error monitoring using SSE.
 - Numerical output formatting in C++.
 
-## Future Improvements
-
-Potential extensions to the project include:
-
-- Plotting SSE against epochs to visualize training progress.
-- Comparing different learning rates and hidden-layer sizes.
-- Checking analytical gradients against numerical approximations.
-- Evaluating predictions on additional input combinations.
-- Comparing batch gradient descent with stochastic and mini-batch approaches.
-
-These are possible extensions, not features claimed to be implemented in the current version.
-
 ## Conclusion
 
 This project implements a 2–2–1 feedforward neural network from scratch in C++. It demonstrates the core mechanics of forward propagation, sigmoid activation, backpropagation, batch gradient descent, and error measurement for a continuous input-output mapping.
