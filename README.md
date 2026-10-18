@@ -2,7 +2,7 @@
 
 A feedforward neural network implemented from scratch in C++ to learn a continuous input-output mapping using batch backpropagation.
 
-The project demonstrates how a neural network processes multiple input features, computes a prediction, propagates errors backward through a hidden layer, and updates its weights and biases to reduce prediction error.
+This project explores the fundamentals of artificial neural networks, including forward propagation, sigmoid activation, error calculation, backpropagation, and batch gradient descent, without relying on machine learning frameworks.
 
 ## Network Architecture
 
@@ -12,18 +12,20 @@ The network follows a **2–2–1 architecture**:
 - **Hidden layer:** 2 neurons with sigmoid activation
 - **Output layer:** 1 neuron with linear activation
 
-The network maps two input features, \(x_1\) and \(x_2\), to a single predicted output, \(\hat{y}\).
+The network receives two input features, \(x_1\) and \(x_2\), and produces one predicted output, \(\hat{y}\).
 
 ## Training Configuration
 
-| Parameter | Configuration |
+| Parameter | Value |
 |---|---|
 | Architecture | 2–2–1 |
+| Input neurons | 2 |
+| Hidden neurons | 2 |
+| Output neurons | 1 |
 | Hidden activation | Sigmoid |
 | Output activation | Linear |
-| Initial weights | Manually initialized |
-| Initial biases | Manually initialized |
-| Learning rate | 0.6 |
+| Initial weights and biases | Manually initialized |
+| Learning rate (\(n\)) | 0.6 |
 | Learning algorithm | Batch backpropagation |
 | Loss function | Sum of Squared Errors (SSE) |
 | Training samples | 4 |
@@ -41,11 +43,11 @@ The network is trained on four input-output samples representing a continuous in
 | 0.3 | 0.4 | 0.7 |
 | 0.4 | 0.5 | 0.9 |
 
-Each sample contains two input values and one target output. The network learns from these examples by adjusting its parameters over successive training epochs.
+Each training sample contains two input values and one target value. The network adjusts its parameters to reduce the prediction error on these samples.
 
 ## Forward Propagation
 
-Forward propagation computes the network's prediction for a given input.
+Forward propagation calculates the network's prediction from the input values, weights, and biases.
 
 ### 1. Hidden Layer
 
@@ -75,45 +77,65 @@ $$
 z_2=\sigma(a_2)=\frac{1}{1+e^{-a_2}}
 $$
 
-Here, \(w_{ij}\) represents an input-to-hidden weight, \(b_j\) is a hidden-layer bias, and \(z_j\) is the activation of hidden neuron \(j\).
+Here, \(w_{ij}\) represents an input-to-hidden weight, \(b_j\) represents a hidden-layer bias, and \(z_j\) is the activation of hidden neuron \(j\).
+
+In the implementation, the hidden-layer biases are named `w01` and `w02`, respectively.
 
 ### 2. Output Layer
 
-The output neuron combines the hidden-layer activations using a linear function:
+The output neuron combines the two hidden activations using a linear function:
 
 $$
-\hat{y}=v_{13}z_1+v_{23}z_2+b_3
+\hat{y}=v_{13}z_1+v_{23}z_2+v_0
 $$
 
-where \(v_{13}\) and \(v_{23}\) are the hidden-to-output weights and \(b_3\) is the output bias.
+where:
 
-The linear activation allows the predicted output to take any real value.
+- \(v_{13}\) and \(v_{23}\) are the hidden-to-output weights.
+- \(v_0\) is the output bias.
+- \(\hat{y}\) is the predicted output.
+
+The linear output activation allows the network to produce any real-valued prediction.
 
 ## Error Calculation
 
-The prediction error is the difference between the target and the network's output:
+For each training sample, the prediction error is calculated as:
 
 $$
 e=t-\hat{y}
 $$
 
-The Sum of Squared Errors (SSE) over \(N\) training samples is:
+where \(t\) is the target value and \(\hat{y}\) is the predicted output.
+
+The Sum of Squared Errors (SSE) across \(N\) training samples is:
 
 $$
 \mathrm{SSE}=\sum_{i=1}^{N}e_i^2
 $$
 
-For this project, \(N=4\).
+For this project, the batch contains \(N=4\) samples:
+
+$$
+\mathrm{SSE}=\sum_{i=1}^{4}(t_i-\hat{y}_i)^2
+$$
 
 SSE measures the total squared prediction error across the training dataset. A lower SSE indicates a smaller total squared error on these samples.
 
 ## Backpropagation
 
-Backpropagation computes how the prediction error contributes to the gradients of the network's weights and biases.
+Backpropagation calculates how the prediction error contributes to the gradients of the network's weights and biases.
 
-### 1. Output Layer Error
+The implementation uses the error convention:
 
-Using the error convention \(e=t-\hat{y}\), the output-layer gradient contributions are:
+$$
+e=t-\hat{y}
+$$
+
+With this convention, the parameter update contributions are added to the current weights and biases.
+
+### 1. Output Layer Gradients
+
+The per-sample update contributions for the output weights are:
 
 $$
 \Delta v_{13}=ez_1
@@ -126,10 +148,12 @@ $$
 The output bias contribution is:
 
 $$
-\Delta b_3=e
+\Delta v_0=e
 $$
 
-### 2. Hidden Layer Error
+These contributions depend on the prediction error and the hidden-layer activations.
+
+### 2. Hidden Layer Gradients
 
 The derivative of the sigmoid activation function is:
 
@@ -149,7 +173,7 @@ $$
 \delta_2=ev_{23}z_2(1-z_2)
 $$
 
-The corresponding input-to-hidden weight contributions are:
+The input-to-hidden weight contributions are:
 
 $$
 \Delta w_{11}=\delta_1x_1
@@ -177,56 +201,67 @@ $$
 \Delta b_2=\delta_2
 $$
 
-These expressions describe the per-sample gradient contributions under the stated error convention.
+In the C++ implementation, these bias parameters are stored as `w01` and `w02`.
 
 ## Batch Gradient Descent
 
-The network uses batch backpropagation with all four training samples in each batch.
+The network uses batch backpropagation with all four training samples processed before each parameter update.
 
-Gradients are accumulated across the dataset and averaged before the parameters are updated.
+The training process follows these steps:
 
-For a parameter \(w\), the update can be expressed as:
+1. Perform forward propagation for each training sample.
+2. Calculate the prediction error and accumulate SSE.
+3. Calculate the output-layer and hidden-layer gradient contributions.
+4. Accumulate the gradients from all four samples.
+5. Average the accumulated gradients.
+6. Update all weights and biases.
+7. Repeat for 100 epochs.
+
+For a trainable parameter \(w\), the batch update is:
 
 $$
-w\leftarrow w+\frac{\eta}{N}
+w\leftarrow w+\frac{n}{N}
 \sum_{i=1}^{N}\Delta w_i
 $$
 
 where:
 
-- \(w\) is a trainable parameter.
-- \(\eta\) is the learning rate, set to \(0.6\).
-- \(N\) is the number of training samples.
+- \(w\) is the parameter being updated.
+- \(n=0.6\) is the learning rate.
+- \(N=4\) is the batch size.
 - \(\Delta w_i\) is the per-sample update contribution.
 
-The same batch-update principle applies to the network's trainable weights and biases.
+The same update procedure applies to the network's weights and biases.
 
-With the error defined as \(e=t-\hat{y}\), the update contributions are added under this convention. This is equivalent to gradient descent when the contributions are defined consistently with the negative derivative of the squared-error objective.
+Because the error is defined as \(e=t-\hat{y}\), the code adds the accumulated update contributions rather than subtracting them.
 
 ## Training Results
 
-The network is trained for **100 epochs**.
-
-The program reports the following information during training:
+The program trains the network for **100 epochs** and reports:
 
 - Network output for each training sample.
 - Corresponding target value.
 - Prediction error.
-- Hidden-layer activations.
-- Current weights and biases.
 - SSE after each epoch.
+- Final network outputs calculated using the trained parameters.
 
-Reported numerical values are formatted to **four decimal places**.
+The network's weights and biases are initialized manually, and numerical output is formatted to four decimal places.
 
-The training dataset contains only four samples. Consequently, the reported SSE describes the network's fit to those samples and does not independently establish its performance on unseen data.
+### SSE Calculation Timing
 
-No final SSE or accuracy value is claimed here because it should be taken directly from the actual program output.
+The implementation calculates SSE during the training loop, before applying the accumulated parameter updates for that epoch.
+
+Consequently, the SSE printed for an epoch corresponds to the parameters used during that epoch's forward passes, while the updated parameters are used in the next epoch.
+
+After the 100 training updates, the program performs another forward pass over the four samples to print the final predictions and targets.
+
+No specific final SSE, accuracy percentage, or convergence threshold is claimed here; these should be reported from actual program output.
 
 ## Technologies Used
 
 - **C++** — Neural network implementation and training.
-- **STL `vector`** — Storage and manipulation of data and network parameters.
-- **`<cmath>`** — Mathematical functions, including exponential calculations.
+- **STL `vector`** — Storage and manipulation of training data.
+- **`<cmath>`** — Mathematical operations, including the exponential function.
 - **`<iomanip>`** — Formatting numerical output.
 - **Sigmoid activation** — Nonlinear hidden-layer transformation.
 - **Linear activation** — Output prediction.
@@ -241,7 +276,7 @@ No final SSE or accuracy value is claimed here because it should be taken direct
 - Sigmoid activation and its derivative.
 - Single-output regression.
 - Backpropagation through a hidden layer.
-- Batch gradient accumulation.
+- Batch gradient accumulation and averaging.
 - Weight and bias updates.
 - Training error monitoring using SSE.
 - Numerical output formatting in C++.
@@ -250,14 +285,16 @@ No final SSE or accuracy value is claimed here because it should be taken direct
 
 Potential extensions to the project include:
 
-- Plotting SSE against epochs to visualize convergence.
+- Plotting SSE against epochs to visualize training progress.
 - Comparing different learning rates and hidden-layer sizes.
 - Checking analytical gradients against numerical approximations.
-- Evaluating the model on additional input combinations.
+- Evaluating predictions on additional input combinations.
 - Comparing batch gradient descent with stochastic and mini-batch approaches.
 
-These are possible extensions rather than features claimed to exist in the current implementation.
+These are possible extensions, not features claimed to be implemented in the current version.
 
 ## Conclusion
 
-This project provides a compact, from-scratch implementation of a 2–2–1 feedforward neural network in C++. It demonstrates the core mechanics of forward propagation, sigmoid activation, backpropagation, batch gradient descent, and error measurement for a continuous input-output mapping.
+This project implements a 2–2–1 feedforward neural network from scratch in C++. It demonstrates the core mechanics of forward propagation, sigmoid activation, backpropagation, batch gradient descent, and error measurement for a continuous input-output mapping.
+
+By implementing the training process directly, the project provides a practical foundation for understanding how neural network weights and biases are adjusted to reduce prediction error.
